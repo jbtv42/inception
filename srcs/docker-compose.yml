@@ -4,50 +4,46 @@ services:
   nginx:
     build: ./requirements/nginx
     container_name: nginx
-    image: nginx
-    depends_on:
-      - wordpress
     ports:
       - "443:443"
     volumes:
-      - wp_files:/var/www/html
+      - /home/temp/data/wordpress:/var/www/html
     networks:
       - inception
     restart: always
-    env_file:
-      - .env
 
   wordpress:
     build: ./requirements/wordpress
     container_name: wordpress
-    image: wordpress
-    depends_on:
-      - mariadb
     volumes:
-      - wp_files:/var/www/html
+      - /home/temp/data/wordpress:/var/www/html
+    environment:
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - WP_ADMIN_USER=${WP_ADMIN_USER}
+      - WP_ADMIN_PASSWORD=${WP_ADMIN_PASSWORD}
+      - WP_ADMIN_EMAIL=${WP_ADMIN_EMAIL}
     networks:
       - inception
+    depends_on:
+      - mariadb
     restart: always
-    env_file:
-      - .env
 
   mariadb:
     build: ./requirements/mariadb
     container_name: mariadb
-    image: mariadb
     volumes:
-      - db_data:/var/lib/mysql
+      - /home/temp/data/db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     networks:
       - inception
     restart: always
-    env_file:
-      - .env
-
-volumes:
-  db_data:
-  wp_files:
 
 networks:
   inception:
     driver: bridge
-

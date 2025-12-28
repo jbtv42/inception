@@ -1,49 +1,86 @@
-version: '3.8'
-
 services:
-  nginx:
-    build: ./requirements/nginx
-    container_name: nginx
-    ports:
-      - "443:443"
-    volumes:
-      - /home/temp/data/wordpress:/var/www/html
-    networks:
-      - inception
-    restart: always
-
-  wordpress:
-    build: ./requirements/wordpress
-    container_name: wordpress
-    volumes:
-      - /home/temp/data/wordpress:/var/www/html
-    environment:
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - WP_ADMIN_USER=${WP_ADMIN_USER}
-      - WP_ADMIN_PASSWORD=${WP_ADMIN_PASSWORD}
-      - WP_ADMIN_EMAIL=${WP_ADMIN_EMAIL}
-    networks:
-      - inception
-    depends_on:
-      - mariadb
-    restart: always
 
   mariadb:
-    build: ./requirements/mariadb
-    container_name: mariadb
-    volumes:
-      - /home/temp/data/db:/var/lib/mysql
+    build : requirements/mariadb
+    image : mariadb
+    container_name : mariadb
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-    networks:
-      - inception
-    restart: always
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_USER: ${WORDPRESS_DB_USER}
+      MARIADB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      MARIADB_DATABASE: ${WORDPRESS_DB_NAME}
 
-networks:
-  inception:
-    driver: bridge
+    restart : always
+    volumes :
+      - mariadb:/var/lib/mysql
+    networks :
+      - mariadb
+
+  wordpress:
+    build : requirements/wordpress
+    image : wordpress
+    container_name : wordpress
+    environment :
+      - DOMAIN_NAME
+      - WORDPRESS_ADMIN_USER
+      - WORDPRESS_ADMIN_PASSWORD
+      - WORDPRESS_USER
+      - WORDPRESS_PASSWORD
+      - WORDPRESS_EMAIL
+      - WORDPRESS_DB_USER
+      - WORDPRESS_DB_PASSWORD
+      - WORDPRESS_DB_NAME
+    restart : always
+    depends_on :
+      - mariadb
+    volumes :
+      - wordpress:/wp
+    networks : 
+      - mariadb
+      - wordpress
+
+  nginx:
+    build : requirements/nginx
+    image : nginx
+    container_name : nginx
+    ports :
+      - "443:443"
+    depends_on :
+      - wordpress
+    environment :
+      - DOMAIN_NAME
+    restart : always
+    volumes :
+      - wordpress:/wp
+      - certs:/certs
+    networks :
+      - nginx
+      - wordpress
+
+volumes :
+  wordpress :
+    name : wordpress
+    driver_opts :
+      type : "none"
+      o : bind
+      device : $VOLUMES_ROOT/wordpress
+  mariadb :
+    name : mariadb
+    driver_opts :
+      type : "none"
+      o : bind
+      device : $VOLUMES_ROOT/mariadb
+  certs :
+    name : certs
+    driver_opts :
+      type : "none"
+      o : bind
+      device : $VOLUMES_ROOT/certs
+
+networks :
+  nginx :
+    driver : bridge
+  mariadb :
+    driver : bridge
+  wordpress :
+    driver : bridge

@@ -1,0 +1,10 @@
+INSERT INTO wp_users 
+(user_login, user_pass, user_nicename, user_email, user_status, display_name, user_registered)
+VALUES
+('new', MD5('changeme'), 'new', 'new@example.com', 0, 'new', NOW());
+
+
+INSERT INTO wp_usermeta (user_id, meta_key, meta_value)
+VALUES
+(7, 'wp_capabilities', 'a:1:{s:10:"subscriber";b:1;}'),
+(7, 'wp_user_level', '10');

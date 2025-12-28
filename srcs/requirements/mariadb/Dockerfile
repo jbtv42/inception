@@ -1,5 +1,12 @@
-FROM alpine:3.18
-RUN apk add --no-cache mariadb mariadb-client
-COPY conf /etc/mysql
-COPY tools /scripts
-CMD ["mysqld"]
+FROM alpine:3.21
+
+RUN addgroup -S mysql && \
+    adduser -S -G mysql mysql
+
+RUN apk add --no-cache mariadb mariadb-client su-exec
+
+COPY tools/docker-entrypoint.sh /usr/local/bin/
+
+EXPOSE 3306
+ENTRYPOINT ["sh", "/usr/local/bin/docker-entrypoint.sh"]
+CMD ["mariadbd"]
